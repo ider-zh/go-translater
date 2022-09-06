@@ -139,6 +139,7 @@ func (c *BaiduTranslate) request(query string) *BaiDuTranslateResule {
 
 // translate One query
 func (c *BaiduTranslate) TranslateOne(query string) string {
+	c.ratelimit.Take()
 	ret := c.request(query)
 	retString := ""
 	for _, obj := range ret.Trans_result {
