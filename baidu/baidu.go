@@ -29,11 +29,19 @@ const (
 	Premium
 )
 
+type Lang string
+
+const (
+	ZH Lang = "zh"
+	EN Lang = "en"
+)
+
 type BaiduTranslate struct {
 	Appid      string
 	Secret     string
 	qps        int
 	queryLimit int
+	lang       Lang
 	ratelimit  ratelimit.Limiter
 	jobChan    chan translateJob
 }
@@ -82,7 +90,7 @@ func init() {
 
 }
 
-func NewBaiduTranslater(Appid, Secret string, setmeal SetMeal) *BaiduTranslate {
+func NewBaiduTranslater(Appid, Secret string, setmeal SetMeal, lang Lang) *BaiduTranslate {
 	var qps, queryLimit int
 
 	// setmeal select
@@ -101,7 +109,7 @@ func NewBaiduTranslater(Appid, Secret string, setmeal SetMeal) *BaiduTranslate {
 	rl := ratelimit.New(qps)
 
 	jobChan := make(chan translateJob, 100)
-	BaiduTranslater = BaiduTranslate{Appid, Secret, qps, queryLimit, rl, jobChan}
+	BaiduTranslater = BaiduTranslate{Appid, Secret, qps, queryLimit, lang, rl, jobChan}
 	go BaiduTranslater.translateServer()
 	return &BaiduTranslater
 }
@@ -112,8 +120,8 @@ func (c *BaiduTranslate) request(query string) *BaiDuTranslateResule {
 	sign := md5V(c.Appid + query + salt + c.Secret)
 	v := url.Values{}
 	v.Set("q", query)
-	v.Set("from", "en")
-	v.Set("to", "zh")
+	v.Set("from", "auto")
+	v.Set("to", string(c.lang))
 	v.Set("appid", c.Appid)
 	v.Set("salt", salt)
 	v.Set("sign", sign)
